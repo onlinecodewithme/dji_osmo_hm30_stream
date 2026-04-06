@@ -21,15 +21,15 @@ DEVICE="/dev/video0"
 if [ "$RESOLUTION" = "1080p" ]; then
     WIDTH=1920
     HEIGHT=1080
-    FONT_S="Sans 40"
-    FONT_L="Sans Bold 120"
-    TIME_FONT="Sans Bold 50"
+    FONT_S="Sans 15"
+    FONT_L="Sans Bold 40"
+    TIME_FONT="Sans Bold 15"
 else
     WIDTH=1280
     HEIGHT=720
-    FONT_S="Sans 30"
-    FONT_L="Sans Bold 80"
-    TIME_FONT="Sans Bold 40"
+    FONT_S="Sans 10"
+    FONT_L="Sans Bold 30"
+    TIME_FONT="Sans Bold 10"
 fi
 
 echo "=== SIYI HM30 GStreamer Webcam Streamer ==="
