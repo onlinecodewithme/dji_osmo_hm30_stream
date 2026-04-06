@@ -36,12 +36,37 @@ echo "Encoding    : H.264 passthrough (zero-copy from camera)"
 echo "Press Ctrl+C to stop."
 echo ""
 
-# --- GStreamer Pipeline ---
 # The Osmo Action 5 Pro outputs H.264 byte-stream directly via UVC.
 # We just parse, packetize into RTP, and send over UDP.
-gst-launch-1.0 -v \
-    v4l2src device=${DEVICE} ! \
-    "video/x-h264,stream-format=byte-stream,alignment=au,width=${WIDTH},height=${HEIGHT},framerate=30/1" ! \
-    h264parse ! \
-    rtph264pay config-interval=1 pt=96 ! \
-    udpsink host=${DEST_IP} port=${DEST_PORT} sync=false
+# If the camera disconnects, we stream a "Waiting..." screen using software encoding.
+
+while true; do
+    if [ -e "$DEVICE" ]; then
+        echo ">>> Camera ($DEVICE) detected. Streaming hardware H.264 feed..."
+        gst-launch-1.0 -e \
+            v4l2src device=${DEVICE} ! \
+            "video/x-h264,stream-format=byte-stream,alignment=au,width=${WIDTH},height=${HEIGHT},framerate=30/1" ! \
+            h264parse ! \
+            rtph264pay config-interval=1 pt=96 ! \
+            udpsink host=${DEST_IP} port=${DEST_PORT} sync=false
+            
+        echo ">>> Camera pipeline ended (disconnected?). Switching to waiting screen..."
+    else
+        echo ">>> Camera ($DEVICE) missing. Streaming waiting screen..."
+        # Fallback stream: black background, centered text, software H.264 encode
+        # We specify the timeout so it periodically checks for the camera again
+        # We use 'timeout 3' to restart the loop and check if camera came back
+        # Actually it's better to just stream this constantly until the camera appears.
+        # But GStreamer doesn't easily let us abort when a new device appears.
+        # Simple solution: Stream the waiting screen for 2 seconds, exit, check again.
+        
+        gst-launch-1.0 -e \
+            videotestsrc pattern=black num-buffers=60 ! \
+            "video/x-raw,width=${WIDTH},height=${HEIGHT},framerate=30/1" ! \
+            textoverlay text="Xavier UGV Waiting ..." valignment=center halignment=center font-desc="Sans 40" ! \
+            x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast ! \
+            rtph264pay config-interval=1 pt=96 ! \
+            udpsink host=${DEST_IP} port=${DEST_PORT} sync=false
+    fi
+    sleep 0.5
+done
