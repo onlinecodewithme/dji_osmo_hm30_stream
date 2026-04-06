@@ -18,14 +18,23 @@ DEST_PORT="${2:-5600}"
 RESOLUTION="${3:-720p}"
 get_camera_device() {
     for sysdev in /sys/class/video4linux/video* ; do
-        if [ -f "$sysdev/name" ]; then
+        if [ -d "$sysdev" ] && [ -f "$sysdev/name" ]; then
             name=$(cat "$sysdev/name" 2>/dev/null)
-            if [[ "$name" == *"Action 5"* ]] || [[ "$name" == *"DJI"* ]]; then
+            if [[ "$name" == *"Action"* ]] || [[ "$name" == *"DJI"* ]]; then
                 echo "/dev/$(basename $sysdev)"
                 return
             fi
         fi
     done
+    
+    # DJI might not report its name as DJI over UVC. Fall back to standard nodes.
+    for dev in /dev/video0 /dev/video2 /dev/video4 /dev/video6 /dev/video8; do
+        if [ -e "$dev" ]; then
+            echo "$dev"
+            return
+        fi
+    done
+    
     echo ""
 }
 
