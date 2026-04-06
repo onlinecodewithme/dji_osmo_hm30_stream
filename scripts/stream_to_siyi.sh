@@ -81,7 +81,7 @@ start_fallback() {
     BG_COLOR=$((16#FF1A202C))
     CLK_COLOR=$((16#FFF53855))
     gst-launch-1.0 -q -e \
-        videotestsrc pattern=solid-color foreground-color=${BG_COLOR} ! \
+        videotestsrc pattern=solid-color foreground-color=${BG_COLOR} is-live=true ! \
         "video/x-raw,format=I420,width=${WIDTH},height=${HEIGHT},framerate=30/1" ! \
         textoverlay text="<span foreground='white' font_desc='${FONT_S}'>STREAM IS</span>&#10;<span foreground='#F53855' font_desc='${FONT_L}'>OFFLINE</span>" valignment=center halignment=center draw-shadow=false ! \
         textoverlay text="XAVIER UGV" valignment=bottom halignment=center ypad=50 font-desc="${FONT_S}" color=$((16#FFFFFFFF)) draw-shadow=false ! \
