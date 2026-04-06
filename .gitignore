@@ -1,0 +1,7 @@
+build/
+*.deb
+*.o
+*.a
+*.so
+.DS_Store
+.vscode/
