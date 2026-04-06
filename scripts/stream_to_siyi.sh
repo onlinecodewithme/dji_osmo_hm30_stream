@@ -16,7 +16,18 @@
 DEST_IP="${1:-192.168.144.147}"
 DEST_PORT="${2:-5600}"
 RESOLUTION="${3:-720p}"
-DEVICE="/dev/video0"
+get_camera_device() {
+    for sysdev in /sys/class/video4linux/video* ; do
+        if [ -f "$sysdev/name" ]; then
+            name=$(cat "$sysdev/name" 2>/dev/null)
+            if [[ "$name" == *"Action 5"* ]] || [[ "$name" == *"DJI"* ]]; then
+                echo "/dev/$(basename $sysdev)"
+                return
+            fi
+        fi
+    done
+    echo ""
+}
 
 if [ "$RESOLUTION" = "1080p" ]; then
     WIDTH=1920
@@ -53,7 +64,7 @@ trap cleanup INT TERM
 start_camera() {
     [ -n "$GST_PID" ] && kill -9 $GST_PID 2>/dev/null
     gst-launch-1.0 -q -e \
-        v4l2src device=${DEVICE} ! \
+        v4l2src device=${CURRENT_DEV} ! \
         "video/x-h264,stream-format=byte-stream,alignment=au,width=${WIDTH},height=${HEIGHT},framerate=30/1" ! \
         h264parse ! rtph264pay config-interval=1 pt=96 ! \
         udpsink host=${DEST_IP} port=${DEST_PORT} sync=false > /dev/null 2>&1 &
@@ -77,9 +88,11 @@ start_fallback() {
 }
 
 while true; do
-    if [ -e "$DEVICE" ]; then
+    CURRENT_DEV=$(get_camera_device)
+    
+    if [ -n "$CURRENT_DEV" ]; then
         if [ "$STATE" != "CAMERA" ]; then
-            echo ">>> Camera ($DEVICE) connected. Streaming hardware H.264 feed..."
+            echo ">>> Camera ($CURRENT_DEV) connected. Streaming hardware H.264 feed..."
             start_camera
             STATE="CAMERA"
         fi
