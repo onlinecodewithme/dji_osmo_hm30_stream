@@ -27,14 +27,10 @@ get_camera_device() {
         fi
     done
     
-    # DJI might not report its name as DJI over UVC. Fall back to standard nodes.
-    for dev in /dev/video0 /dev/video2 /dev/video4 /dev/video6 /dev/video8; do
-        if [ -e "$dev" ]; then
-            echo "$dev"
-            return
-        fi
-    done
-    
+    # We must NOT fall back simply to /dev/video0 or /dev/video2 on this rig, 
+    # because /dev/video0 is firmly attached to the ZED X stereo capture card.
+    # If the user hasn't tapped "Webcam" on the DJI, it's safer to return empty 
+    # and stay on the "STREAM IS OFFLINE" screen than arbitrarily streaming the ZED!
     echo ""
 }
 
