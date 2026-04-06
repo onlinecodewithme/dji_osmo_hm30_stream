@@ -58,10 +58,14 @@ while true; do
         # But GStreamer doesn't easily let us abort when a new device appears.
         # Simple solution: Stream the waiting screen for 2 seconds, exit, check again.
         
+        BG_COLOR=$((16#FF1A202C))
+        CLK_COLOR=$((16#FFF53855))
+        
         gst-launch-1.0 -e \
-            videotestsrc pattern=black num-buffers=60 ! \
+            videotestsrc pattern=solid-color foreground-color=${BG_COLOR} num-buffers=60 ! \
             "video/x-raw,width=${WIDTH},height=${HEIGHT},framerate=30/1" ! \
-            textoverlay text="Xavier UGV Waiting ..." valignment=center halignment=center font-desc="Sans 40" ! \
+            textoverlay text="<span foreground='white' size='40000'>STREAM IS</span>&#10;<span foreground='#F53855' size='120000' font_weight='bold'>OFFLINE</span>" valignment=center halignment=center draw-shadow=false ! \
+            clockoverlay time-format="[ %H:%M ]" valignment=top halignment=right xpad=50 ypad=50 font-desc="Sans Bold 60" color=${CLK_COLOR} shaded-background=true ! \
             x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast ! \
             rtph264pay config-interval=1 pt=96 ! \
             udpsink host=${DEST_IP} port=${DEST_PORT} sync=false
