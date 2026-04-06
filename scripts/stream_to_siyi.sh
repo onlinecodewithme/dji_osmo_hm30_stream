@@ -70,7 +70,9 @@ start_fallback() {
         textoverlay text="<span foreground='white' font_desc='${FONT_S}'>STREAM IS</span>&#10;<span foreground='#F53855' font_desc='${FONT_L}'>OFFLINE</span>" valignment=center halignment=center draw-shadow=false ! \
         textoverlay text="Xavier UGV" valignment=bottom halignment=center ypad=50 font-desc="${FONT_S}" color=$((16#FFFFFFFF)) draw-shadow=false ! \
         clockoverlay time-format="[ %H:%M:%S ]" valignment=top halignment=right xpad=50 ypad=50 font-desc="${TIME_FONT}" color=${CLK_COLOR} shaded-background=true ! \
-        x264enc tune=zerolatency bitrate=2000 speed-preset=ultrafast ! \
+        nvvidconv ! "video/x-raw(memory:NVMM),format=I420" ! \
+        nvv4l2h264enc bitrate=2000000 maxperf-enable=1 insert-sps-pps=true ! \
+        h264parse ! \
         rtph264pay config-interval=1 pt=96 ! \
         udpsink host=${DEST_IP} port=${DEST_PORT} sync=false > /dev/null 2>&1 &
     GST_PID=$!

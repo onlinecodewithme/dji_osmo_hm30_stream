@@ -39,9 +39,10 @@ flowchart TD
 ## 🛠️ Repository Components
 
 ### 1. `scripts/stream_to_siyi.sh` (The Core Pipeline)
-A GStreamer script tailored for UVC cameras with hardware H.264 compliance (like the DJI Osmo).
-* **Zero-latency focus**: Relies entirely on `h264parse` and `rtph264pay` rather than any software encoder (`x264enc`).
-* **Configurable**: Easily toggle between `720p` and `1080p`, or change destination IPs without touching C++ code.
+A resilient GStreamer script tailored for UVC cameras (DJI Osmo):
+* **Zero-latency Hardware Path**: Passes through native H.264 data from the camera using zero CPU overhead.
+* **Intelligent CUDA Fallback**: Uses an internal Bash State Machine. If the camera crashes or is physically disconnected, it seamlessly drops into a custom "STREAM IS OFFLINE" fallback UI mapped through the **NVIDIA `nvv4l2h264enc` GPU CUDA core**, ticking a live system clock at 30 FPS without taxing the CPU!
+* **Auto-Reconnect**: The moment the camera is plugged back in, the stream natively transitions out of the fallback UI and back to the zero-copy Osmo feed without dropping the RTP transport stream.
 
 ### 2. `src/streamer/main.cpp` (The Debugger)
 A standalone `C++` & `FFmpeg (libav)` utility that generates SMPTE colour bars. 
