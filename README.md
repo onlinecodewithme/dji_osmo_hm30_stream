@@ -29,7 +29,7 @@ flowchart TD
 
     %% Connections
     Osmo -- "USB (UVC Video Class)" --> SshScript
-    SshScript -- "H.264 RTP over UDP (Port 5600)\nDestination: 192.168.144.147" --> AirUnit
+    SshScript -- "H.264 RTP over UDP (Port 5600)\nDestination: 192.168.144.161" --> AirUnit
     AirUnit -. "15km Wireless Datalink\n(192.168.144.x Network)" .-> GroundUnit
     GroundUnit -- "Ethernet" --> Receiver
 ```
@@ -61,7 +61,7 @@ A custom C++ / SDL2 software decoder.
 Since the refactoring to a production standard, the bash script lives inside the `scripts/` directory, and the compiled C++ apps reside in `build/`. Make sure you run commands from the repository root appropriately.
 
 ### 1. Send DJI Video to Air Unit (Zero-Copy)
-Plug the DJI Osmo via USB to the companion computer. By default, this will stream 720p @ 30FPS to IP `192.168.144.147` on port `5600`.
+Plug the DJI Osmo via USB to the companion computer. By default, this will stream 720p @ 30FPS to IP `192.168.144.161` on port `5600`.
 ```bash
 ./scripts/stream_to_siyi.sh
 ```
@@ -69,7 +69,7 @@ Plug the DJI Osmo via USB to the companion computer. By default, this will strea
 **Override Settings:**
 To push a 1080p stream to a specific device:
 ```bash
-./scripts/stream_to_siyi.sh 192.168.144.147 5600 1080p
+./scripts/stream_to_siyi.sh 192.168.144.161 5600 1080p
 ```
 
 ### 2. Receive the Feed on the Ground Station 
@@ -87,7 +87,7 @@ cd build
 ### 3. Generate a Test Pattern
 If you need to verify network routing independent of the webcam:
 ```bash
-./build/siyi_streamer --ip 192.168.144.147 --port 5600
+./build/siyi_streamer --ip 192.168.144.161 --port 5600
 ```
 
 ---

@@ -82,12 +82,14 @@ int main(int argc, char *argv[]) {
         {"fps",      required_argument, nullptr, 'f'},
         {"bitrate",  required_argument, nullptr, 'b'},
         {"duration", required_argument, nullptr, 'd'},
+        {"udp-broadcast", no_argument,  nullptr, 'U'},
         {"help",     no_argument,       nullptr, 'H'},
         {nullptr, 0, nullptr, 0}
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "i:p:s:w:h:f:b:d:H", long_opts, nullptr)) != -1) {
+    bool use_udp_broadcast = false;
+    while ((opt = getopt_long(argc, argv, "i:p:s:w:h:f:b:d:UH", long_opts, nullptr)) != -1) {
         switch (opt) {
             case 'i': dst_ip = optarg; break;
             case 'p': dst_port = std::stoi(optarg); break;
@@ -97,6 +99,7 @@ int main(int argc, char *argv[]) {
             case 'f': fps = std::stoi(optarg); break;
             case 'b': bitrate = std::stoi(optarg); break;
             case 'd': duration_sec = std::stoi(optarg); break;
+            case 'U': use_udp_broadcast = true; break;
             case 'H':
             default:
                 std::cerr << "Usage: " << argv[0] << " [options]\n";
@@ -107,8 +110,12 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
-    std::cout << "=== SIYI HM30 Test-Pattern Streamer ===\n"
-              << "Destination : rtsp://" << dst_ip << ":" << dst_port << dst_path << "\n";
+    std::cout << "=== SIYI HM30 Test-Pattern Streamer ===\n";
+    if (use_udp_broadcast) {
+        std::cout << "Destination : udp://255.255.255.255:" << dst_port << " (Broadcast)\n";
+    } else {
+        std::cout << "Destination : rtsp://" << dst_ip << ":" << dst_port << dst_path << "\n";
+    }
 
     const AVCodec* codec = avcodec_find_encoder_by_name("libx264");
     if (!codec) codec = avcodec_find_encoder(AV_CODEC_ID_H264);
@@ -139,13 +146,19 @@ int main(int argc, char *argv[]) {
     if (avcodec_open2(enc_ctx.get(), codec, nullptr) < 0) return 1;
 
     char rtsp_url[512];
-    snprintf(rtsp_url, sizeof(rtsp_url), "rtsp://%s:%d%s", dst_ip.c_str(), dst_port, dst_path.c_str());
-
     AVFormatContext* raw_fmt_ctx = nullptr;
-    int ret = avformat_alloc_output_context2(&raw_fmt_ctx, nullptr, "rtsp", rtsp_url);
-    if (ret < 0 || !raw_fmt_ctx) {
-        snprintf(rtsp_url, sizeof(rtsp_url), "rtp://%s:%d", dst_ip.c_str(), dst_port);
-        ret = avformat_alloc_output_context2(&raw_fmt_ctx, nullptr, "rtp", rtsp_url);
+    int ret = 0;
+    
+    if (use_udp_broadcast) {
+        snprintf(rtsp_url, sizeof(rtsp_url), "udp://255.255.255.255:%d?broadcast=1", dst_port);
+        ret = avformat_alloc_output_context2(&raw_fmt_ctx, nullptr, "mpegts", rtsp_url);
+    } else {
+        snprintf(rtsp_url, sizeof(rtsp_url), "rtsp://%s:%d%s", dst_ip.c_str(), dst_port, dst_path.c_str());
+        ret = avformat_alloc_output_context2(&raw_fmt_ctx, nullptr, "rtsp", rtsp_url);
+        if (ret < 0 || !raw_fmt_ctx) {
+            snprintf(rtsp_url, sizeof(rtsp_url), "rtp://%s:%d", dst_ip.c_str(), dst_port);
+            ret = avformat_alloc_output_context2(&raw_fmt_ctx, nullptr, "rtp", rtsp_url);
+        }
     }
     FormatContextPtr fmt_ctx(raw_fmt_ctx);
     if (!fmt_ctx) return 1;

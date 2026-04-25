@@ -7,13 +7,13 @@
 # (no re-encoding needed — camera outputs H.264 natively).
 #
 # Usage:
-#   ./stream_to_siyi.sh                         # defaults
-#   ./stream_to_siyi.sh 192.168.144.147 5600     # custom IP/port
-#   ./stream_to_siyi.sh 192.168.144.147 5600 1080p  # 1080p mode
+#   ./stream_to_siyi.sh                         # defaults (Broadcast to all IPs)
+#   ./stream_to_siyi.sh 192.168.144.161 5600     # custom IP/port
+#   ./stream_to_siyi.sh 192.168.144.161 5600 1080p  # 1080p mode
 # ============================================================================
 
 # --- Configuration ---
-DEST_IP="${1:-192.168.144.147}"
+DEST_IP="${1:-255.255.255.255}"
 DEST_PORT="${2:-5600}"
 RESOLUTION="${3:-720p}"
 get_camera_device() {
@@ -51,7 +51,11 @@ fi
 echo "=== SIYI HM30 GStreamer Webcam Streamer ==="
 echo "Camera      : DJI Osmo Action 5 Pro ($DEVICE)"
 echo "Resolution  : ${WIDTH}x${HEIGHT} @ 30fps"
-echo "Destination : rtp://${DEST_IP}:${DEST_PORT}"
+if [ "$DEST_IP" = "255.255.255.255" ]; then
+    echo "Destination : rtp://${DEST_IP}:${DEST_PORT} (Broadcast - Accessible from any IP)"
+else
+    echo "Destination : rtp://${DEST_IP}:${DEST_PORT}"
+fi
 echo "Encoding    : Hardware H.264 / Software Fallback"
 echo "Press Ctrl+C to stop."
 echo ""
