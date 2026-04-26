@@ -1,0 +1,16 @@
+[Unit]
+Description=Stream to SIYI HM30 Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=x4
+WorkingDirectory=/home/x4/zedxonecapturecardsetup
+ExecStartPre=/bin/sleep 40
+ExecStart=/home/x4/zedxonecapturecardsetup/scripts/stream_to_siyi.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
